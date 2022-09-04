@@ -10,9 +10,10 @@
 
 #include <iostream>
 //TODO:
-//1 true FPS camera 
+//1 true FPS camera, solution: on xz plane, y = 0
 //2 self lookAt
 //3 fov support
+
 class Camera {
 public:
 
@@ -35,12 +36,48 @@ public:
 			cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 		if (glfwGetKey(cameraWindow, GLFW_KEY_D) == GLFW_PRESS)
 			cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-		// cameraPos + cameraFront
-	
-		cameraView = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-		//unsigned int shaderViewLoc = glGetUniformLocation(shader.ID, "view");
+		cameraPos.y = 0;
+		
+		cameraView = lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+		
 		glUniformMatrix4fv(shaderViewLoc, 1, GL_FALSE,
 			glm::value_ptr(cameraView));
+	}
+
+	glm::mat4 lookAt(glm::vec3 pos, glm::vec3 target, glm::vec3 up) {
+		glm::vec3 dirAxis = glm::normalize(pos - target);
+
+		glm::vec3 rightAxis = glm::normalize(glm::cross(up, dirAxis));
+
+		//parameter up(cameraUp in object) is actually
+		//world up, it can determine cameraRight
+		//but it's not upAxis in camera Axis
+		glm::vec3 upAxis = glm::normalize(glm::cross(dirAxis, rightAxis));
+
+		glm::mat4 translation = glm::mat4(1.0f);
+
+		translation[3][0] = -cameraPos.x;
+		translation[3][1] = -cameraPos.y;
+		translation[3][2] = -cameraPos.z;
+
+		glm::mat4 rotation = glm::mat4(1.0f);
+
+		rotation[0][0] = rightAxis.x;
+		rotation[1][0] = rightAxis.y;
+		rotation[2][0] = rightAxis.z;
+
+		rotation[0][1] = upAxis.x;
+		rotation[1][1] = upAxis.y;
+		rotation[2][1] = upAxis.z;
+
+		rotation[0][2] = dirAxis.x;
+		rotation[1][2] = dirAxis.y;
+		rotation[2][2] = dirAxis.z;
+
+		//first translation, then rotation
+		//can't combine to 1 matrix, since that would cause to first rotation then translation
+		//TODO: why does this matrix transform vertex to view coordinates
+		return rotation * translation;
 	}
 
 	void setWindow(GLFWwindow* window) {
@@ -93,7 +130,6 @@ public:
 
 		//TODO: why need normalize
 		cameraFront = glm::normalize(direction);
-		//std::cout << "x :  " << cameraFront.x << std::endl;
 	}
 
 
