@@ -1,8 +1,6 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include "shader.hpp"
-
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -10,7 +8,11 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-//TODO: 1 FPS camera 2 self lookAt
+#include <iostream>
+//TODO:
+//1 true FPS camera 
+//2 self lookAt
+//3 fov support
 class Camera {
 public:
 
@@ -18,13 +20,25 @@ public:
 	: cameraPos(pos), cameraUp(up), cameraFront(front) {
 		yaw_axisy = -90.0f;
 		pitch_axisx = 0.0f;
-        sensitivity = 0.01f;
+		
+		lastX = 600;
+		lastY = 400;
 		//fov = 45.0f;
 	}
 
 	void look() {
+		if (glfwGetKey(cameraWindow, GLFW_KEY_W) == GLFW_PRESS)
+			cameraPos += cameraSpeed * cameraFront;
+		if (glfwGetKey(cameraWindow, GLFW_KEY_S) == GLFW_PRESS)
+			cameraPos -= cameraSpeed * cameraFront;
+		if (glfwGetKey(cameraWindow, GLFW_KEY_A) == GLFW_PRESS)
+			cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+		if (glfwGetKey(cameraWindow, GLFW_KEY_D) == GLFW_PRESS)
+			cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+		// cameraPos + cameraFront
+	
 		cameraView = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-		unsigned int shaderViewLoc = glGetUniformLocation(shader.ID, "view");
+		//unsigned int shaderViewLoc = glGetUniformLocation(shader.ID, "view");
 		glUniformMatrix4fv(shaderViewLoc, 1, GL_FALSE,
 			glm::value_ptr(cameraView));
 	}
@@ -35,8 +49,12 @@ public:
 		//glfwSetScrollCallback(cameraWindow, onScroll);
 	}
 
-	void setShader(Shader s) {
-		shader = s;
+	void setSpeed(float speed) {
+		cameraSpeed = speed;
+	}
+
+	 void setViewLoc(unsigned int loc) {
+		shaderViewLoc = loc;
 	}
 
 	void onMouseMove(double xPos, double yPos) {
@@ -75,6 +93,7 @@ public:
 
 		//TODO: why need normalize
 		cameraFront = glm::normalize(direction);
+		//std::cout << "x :  " << cameraFront.x << std::endl;
 	}
 
 
@@ -95,10 +114,9 @@ private:
 	float pitch_axisx;
 
 	float lastX, lastY;
-
+	unsigned int shaderViewLoc;
 	GLFWwindow* cameraWindow;
-
-	Shader shader;
+	float cameraSpeed;
 };
 
 #endif
