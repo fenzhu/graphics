@@ -52,6 +52,7 @@ public:
 		//parameter up(cameraUp in object) is actually
 		//world up, it can determine cameraRight
 		//but it's not upAxis in camera Axis
+		//eg: when dot(dirAxis, up) != 0
 		glm::vec3 upAxis = glm::normalize(glm::cross(dirAxis, rightAxis));
 
 		glm::mat4 translation = glm::mat4(1.0f);
