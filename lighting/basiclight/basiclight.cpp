@@ -232,8 +232,6 @@ int main(int argc, char *argv[])
         glfwSwapBuffers(mWindow);
         glfwPollEvents();
 
-        // unbind VAO, new VAO next frame
-        // glBindVertexArray(0);
     }
 
     glDeleteVertexArrays(1, &CubeVAO);
