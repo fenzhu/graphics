@@ -92,13 +92,28 @@ int main(int argc, char *argv[])
     int width, height, numChannels;
     // texture wrapping parameter
     // GL_TEXTURE_WRAP_S GL_TEXTURE_WRAP_T imply texture coordinate
+
     // GL_REPEAT: The integer part of the coordinate will be ignored and a repeating pattern is formed.
     // GL_MIRRORED_REPEAT: The texture will also be repeated, but it will be mirrored when the integer part of the coordinate is odd.
     // GL_CLAMP_TO_EDGE: The coordinate will simply be clamped between 0 and 1.
     // GL_CLAMP_TO_BORDER: The coordinates that fall outside the range will be given a specified border color.
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
     // texture filtering parameter
+    // filtering happens when a texture image is stretched beyond its original size or when it's sized down.
+    // GL_TEXTURE_MIN_FILTER: scale down and GL_TEXTURE_MAG_FILTER: scale up
+    
+    // linear sampling produce smoother look, nearest samping suit games that have pixlated look.
+    //  GL_NEAREST: Returns the pixel that is closest to the coordinates.
+    //  GL_LINEAR: Returns the weighted average of the 4 pixels surrounding the given coordinates.
+
+     // Mipmaps are smaller copies of your texture that have been sized down and filtered in advance. It is recommended that you use them because they result in both a higher quality and higher performance.
+    // sampling from mipmap
+    //  GL_NEAREST_MIPMAP_NEAREST: Uses the mipmap that most closely matches the size of the pixel being textured and samples with nearest neighbour interpolation.
+    //  GL_LINEAR_MIPMAP_NEAREST: Samples the closest mipmap with linear interpolation.
+    //  GL_NEAREST_MIPMAP_LINEAR: Uses the two mipmaps that most closely match the size of the pixel being textured and samples with nearest neighbour interpolation.
+    //  GL_LINEAR_MIPMAP_LINEAR: Samples closest two mipmaps with linear interpolation.
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
