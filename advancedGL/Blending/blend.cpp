@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <map>
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
@@ -94,13 +95,13 @@ float transparentVertices[] = {
     1.0f, -0.5f, 0.0f, 1.0f, 1.0f,
     1.0f, 0.5f, 0.0f, 1.0f, 0.0f};
 
-float vegetation[] = {
-    -1.5f, 0.0f, -0.48f,
-    1.5f, 0.0f, 0.51f,
+// float vegetation[] = {
+//     -1.5f, 0.0f, -0.48f,
+//     1.5f, 0.0f, 0.51f,
 
-    0.0f, 0.0f, 0.7f,
-    -0.3f, 0.0f, -2.3f,
-    0.5f, 0.0f, -0.6f};
+//     0.0f, 0.0f, 0.7f,
+//     -0.3f, 0.0f, -2.3f,
+//     0.5f, 0.0f, -0.6f};
 /*
 local space: relative to the object origin, share within object
 world space: model matrix, local -> world. relative to the world origin, share in all objects in game
@@ -179,9 +180,6 @@ int main(int argc, char *argv[])
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
     glBindVertexArray(0);
 
-    // vegetation.data()[0][0]
-    std::cout << sizeof(vegetation) / sizeof(float) << std::endl;
-
     // OpenGL: The first element corresponds to the lower left corner of the texture image
     //  left -> right bottom -> top
     // stb_image: the first pixel pointed to is top-left-most in the image
@@ -203,6 +201,7 @@ int main(int argc, char *argv[])
     vegetation.push_back(glm::vec3(-0.3f, 0.0f, -2.3f));
     vegetation.push_back(glm::vec3(0.5f, 0.0f, -0.6f));
 
+    std::map<float, glm::vec3> sorted;
     // loadTexture("E:/Glitter/assets/container2.png");
     // unsigned int specularMap = loadTexture("E:/Glitter/assets/container2_specular.png");
     // Model backpack("E:/Glitter/assets/backpack/backpack.obj");
@@ -212,10 +211,15 @@ int main(int argc, char *argv[])
     glDepthFunc(GL_LESS);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    //parameter: srcRGB dstRGB srcALPHA dstALPHA
-    //blend RGB like above, but only have srcALPHA as final ALPHA value
+    // parameter: srcRGB dstRGB srcALPHA dstALPHA
+    // blend RGB like above, but only have srcALPHA as final ALPHA value
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
     // glDepthMask(GL_FALSE);
+
+    // drawing in scene with blending
+    // 1 draw opaque object
+    // 2 sort transperent object
+    // 3 draw transparent object from background to forward
     while (glfwWindowShouldClose(mWindow) == false)
     {
         float currentFrame = static_cast<float>(glfwGetTime());
@@ -246,7 +250,8 @@ int main(int argc, char *argv[])
         glBindVertexArray(cubeVAO);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, cubeTexture);
-        glm::mat4 model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
         cubeShader.setMat4("model", model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         model = glm::mat4(1.0f);
@@ -262,10 +267,18 @@ int main(int argc, char *argv[])
         // vegetation
         glBindVertexArray(vegetationVAO);
         glBindTexture(GL_TEXTURE_2D, blending_transparent_window);
-        for (unsigned int i = 0; i < vegetation.size(); i++)
+        // draw the transperent object in order
+        sorted.clear();
+        for (int i = 0; i < vegetation.size(); i++)
+        {
+            float dis = glm::length(camera.Position - vegetation[i]);
+            sorted[dis] = vegetation[i];
+        }
+
+        for (std::map<float, glm::vec3>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); it++)
         {
             model = glm::mat4(1.0f);
-            model = glm::translate(model, vegetation[i]);
+            model = glm::translate(model, it->second);
             cubeShader.setMat4("model", model);
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
