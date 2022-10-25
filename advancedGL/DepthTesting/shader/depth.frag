@@ -23,5 +23,11 @@ void main ()
     //The depth value of the fragment increases rapidly over distance so almost all the vertices have values close to 1.0. If we were to carefully move really close to an object you may eventually see the colors getting darker, their z-values becoming smaller:
     // FragColor = vec4(vec3(gl_FragCoord.z), 1.0);
 
+    /* anti fight-z
+    1 never place object too close
+    2 set near plane as far as posiible
+    3 increase the precision of depth buffers
+    */
+
     FragColor = texture(texture1, TexCoords);
 }   
