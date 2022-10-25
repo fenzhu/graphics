@@ -194,6 +194,7 @@ int main(int argc, char *argv[])
     unsigned int cubeTexture = loadTexture("E:/Glitter/assets/marble.jpg");
     unsigned int floorTexture = loadTexture("E:/Glitter/assets/metal.png");
     unsigned int grassTexture = loadTexture("E:/Glitter/assets/grass.png");
+    unsigned int blending_transparent_window = loadTexture("E:/Glitter/assets/blending_transparent_window.png");
 
     vector<glm::vec3> vegetation;
     vegetation.push_back(glm::vec3(-1.5f, 0.0f, -0.48f));
@@ -209,6 +210,11 @@ int main(int argc, char *argv[])
     // Rendering Loop
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    //parameter: srcRGB dstRGB srcALPHA dstALPHA
+    //blend RGB like above, but only have srcALPHA as final ALPHA value
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
     // glDepthMask(GL_FALSE);
     while (glfwWindowShouldClose(mWindow) == false)
     {
@@ -255,7 +261,7 @@ int main(int argc, char *argv[])
         glBindVertexArray(0);
         // vegetation
         glBindVertexArray(vegetationVAO);
-        glBindTexture(GL_TEXTURE_2D, grassTexture);
+        glBindTexture(GL_TEXTURE_2D, blending_transparent_window);
         for (unsigned int i = 0; i < vegetation.size(); i++)
         {
             model = glm::mat4(1.0f);
