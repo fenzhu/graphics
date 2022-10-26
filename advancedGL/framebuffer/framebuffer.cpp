@@ -18,6 +18,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 unsigned int loadTexture(char const *path);
+void drawScene(Shader &cubeShader);
 
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
@@ -92,33 +93,21 @@ float transparentVertices[] = {
     1.0f, 0.5f, 0.0f, 1.0f, 0.0f};
 
 float screenVertices[] = {
-    -1.0f, 1.0f, 0.0f, 1.0f,
-    -1.0f, -1.0f, 0.0f, 0.0f,
-    1.0f, -1.0f, 1.0f, 0.0f,
+    -0.3f, 1.0f, 0.0f, 1.0f,
+    -0.3f, 0.7f, 0.0f, 0.0f,
+    0.3f, 0.7f, 1.0f, 0.0f,
 
-    -1.0f, 1.0f, 0.0f, 1.0f,
-    1.0f, -1.0f, 1.0f, 0.0f,
-    1.0f, 1.0f, 1.0f, 1.0f};
+    -0.3f, 1.0f, 0.0f, 1.0f,
+    0.3f, 0.7f, 1.0f, 0.0f,
+    0.3f, 1.0f, 1.0f, 1.0f};
 
-// float vegetation[] = {
-//     -1.5f, 0.0f, -0.48f,
-//     1.5f, 0.0f, 0.51f,
+unsigned int cubeVAO, cubeVBO;
+unsigned int planeVAO, planeVBO;
+unsigned int vegetationVAO, vegetationVBO;
+unsigned int screenVAO, screenVBO;
+unsigned int cubeTexture;
+unsigned int floorTexture;
 
-//     0.0f, 0.0f, 0.7f,
-//     -0.3f, 0.0f, -2.3f,
-//     0.5f, 0.0f, -0.6f};
-/*
-local space: relative to the object origin, share within object
-world space: model matrix, local -> world. relative to the world origin, share in all objects in game
-view space:  view matrix, world -> view. also camera space or eye space. transform to coordinates that are in front of camera, which is user's view.
-clip space: projection matrix, view -> clip. transform coordinates within specified range to normalized device space(NDC (-1.0, 1.0)).
-screen space: perspective division is divide xyz by homogeneous component w. performed at the end of shader vertex step. transform 4D clip space to 3D NDC.
-*/
-/*
-derectional light
-point light
-spotlight
-*/
 int main(int argc, char *argv[])
 {
     glfwInit();
@@ -139,7 +128,7 @@ int main(int argc, char *argv[])
     // Create Context and Load OpenGL Functions
     glfwMakeContextCurrent(mWindow);
     glfwSetFramebufferSizeCallback(mWindow, framebuffer_size_callback);
-    // glfwSetCursorPosCallback(mWindow, mouse_callback);
+    glfwSetCursorPosCallback(mWindow, mouse_callback);
     // glfwSetScrollCallback(mWindow, scroll_callback);
     gladLoadGL();
     fprintf(stderr, "OpenGL %s\n", glGetString(GL_VERSION));
@@ -148,7 +137,6 @@ int main(int argc, char *argv[])
     std::cout << "Maximum number of vertex attributes supported : " << nrAttributes << std::endl;
     std::cout << "Maximum number of texture unit : " << GL_MAX_TEXTURE_UNITS << std::endl;
 
-    unsigned int cubeVAO, cubeVBO;
     glGenVertexArrays(1, &cubeVAO);
     glGenBuffers(1, &cubeVBO);
     glBindVertexArray(cubeVAO);
@@ -160,7 +148,7 @@ int main(int argc, char *argv[])
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
     glBindVertexArray(0);
     // plane VAO
-    unsigned int planeVAO, planeVBO;
+
     glGenVertexArrays(1, &planeVAO);
     glGenBuffers(1, &planeVBO);
     glBindVertexArray(planeVAO);
@@ -173,7 +161,6 @@ int main(int argc, char *argv[])
     glBindVertexArray(0);
 
     // leaf VAO
-    unsigned int vegetationVAO, vegetationVBO;
     glGenVertexArrays(1, &vegetationVAO);
     glGenBuffers(1, &vegetationVBO);
     glBindVertexArray(vegetationVAO);
@@ -185,7 +172,6 @@ int main(int argc, char *argv[])
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
     glBindVertexArray(0);
 
-    unsigned int screenVAO, screenVBO;
     glGenVertexArrays(1, &screenVAO);
     glGenBuffers(1, &screenVBO);
     glBindVertexArray(screenVAO);
@@ -209,8 +195,8 @@ int main(int argc, char *argv[])
                                  "E:/Glitter/Glitter/Shaders/frame.frag");
     screenShader.setInt("screenTexture", 0);
 
-    unsigned int cubeTexture = loadTexture("E:/Glitter/assets/marble.jpg");
-    unsigned int floorTexture = loadTexture("E:/Glitter/assets/metal.png");
+    cubeTexture = loadTexture("E:/Glitter/assets/container.jpg");
+    floorTexture = loadTexture("E:/Glitter/assets/metal.png");
     unsigned int grassTexture = loadTexture("E:/Glitter/assets/grass.png");
     unsigned int blending_transparent_window = loadTexture("E:/Glitter/assets/blending_transparent_window.png");
 
@@ -278,44 +264,29 @@ int main(int argc, char *argv[])
 
         processInput(mWindow);
 
-        // first pass
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+        // draw the scene normaly
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
 
         // draw the scene
         // cubes
-        cubeShader.use();
-        glm::mat4 projection = glm::perspective(glm::radians(45.0f),
-                                                (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        glm::mat4 view = camera.GetViewMatrix();
+        drawScene(cubeShader);
 
-        cubeShader.use();
-        cubeShader.setMat4("projection", projection);
-        cubeShader.setMat4("view", view);
-        glBindVertexArray(cubeVAO);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, cubeTexture);
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
-        cubeShader.setMat4("model", model);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
-        cubeShader.setMat4("model", model);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        // floor
-        glBindVertexArray(planeVAO);
-        glBindTexture(GL_TEXTURE_2D, floorTexture);
-        cubeShader.setMat4("model", glm::mat4(1.0f));
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        glBindVertexArray(0);
-
-        // second pass
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        // rotate camera and draw again
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST);
+        camera.TowardRight();
+        drawScene(cubeShader);
+        camera.TowardLeft();
+
+        // draw the miror
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        // glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        // glClear(GL_COLOR_BUFFER_BIT);
         glDisable(GL_DEPTH_TEST);
 
         screenShader.use();
@@ -343,6 +314,34 @@ int main(int argc, char *argv[])
     glDeleteFramebuffers(1, &fbo);
     glfwTerminate();
     return EXIT_SUCCESS;
+}
+
+void drawScene(Shader &cubeShader)
+{
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f),
+                                            (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    glm::mat4 view = camera.GetViewMatrix();
+
+    cubeShader.use();
+    cubeShader.setMat4("projection", projection);
+    cubeShader.setMat4("view", view);
+    glBindVertexArray(cubeVAO);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, cubeTexture);
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
+    cubeShader.setMat4("model", model);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
+    cubeShader.setMat4("model", model);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    // floor
+    glBindVertexArray(planeVAO);
+    glBindTexture(GL_TEXTURE_2D, floorTexture);
+    cubeShader.setMat4("model", glm::mat4(1.0f));
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
 }
 
 void processInput(GLFWwindow *window)
