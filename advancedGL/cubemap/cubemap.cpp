@@ -240,8 +240,15 @@ int main(int argc, char *argv[])
                                                 (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
 
-        // glDepthFunc(GL_LEQUAL);
-        glDepthMask(GL_FALSE);
+        cubeShader.use();
+        cubeShader.setMat4("projection", projection);
+        cubeShader.setMat4("view", view);
+        drawScene(cubeShader);
+
+        //only pass depth test when there is no object in fragment
+        //save the skybox shader draw behind box(which will be overwrited)
+        glDepthFunc(GL_LEQUAL);
+        // glDepthMask(GL_FALSE);
         skyboxShader.use();
         skyboxShader.setMat4("projection", projection);
         skyboxShader.setMat4("view", glm::mat4(glm::mat3(camera.GetViewMatrix())));
@@ -250,13 +257,8 @@ int main(int argc, char *argv[])
         glActiveTexture(GL_TEXTURE0);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
-        // glDepthFunc(GL_LESS);
-        glDepthMask(GL_TRUE);
-
-        cubeShader.use();
-        cubeShader.setMat4("projection", projection);
-        cubeShader.setMat4("view", view);
-        drawScene(cubeShader);
+        glDepthFunc(GL_LESS);
+        // glDepthMask(GL_TRUE);
 
         // // Flip Buffers and Draw
         glfwSwapBuffers(mWindow);
