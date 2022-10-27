@@ -92,8 +92,7 @@ float transparentVertices[] = {
     1.0f, -0.5f, 0.0f, 1.0f, 1.0f,
     1.0f, 0.5f, 0.0f, 1.0f, 0.0f};
 
-float 
-[] = {
+float screenVertices[] = {
     -0.3f, 1.0f, 0.0f, 1.0f,
     -0.3f, 0.7f, 0.0f, 0.0f,
     0.3f, 0.7f, 1.0f, 0.0f,
@@ -102,9 +101,17 @@ float
     0.3f, 0.7f, 1.0f, 0.0f,
     0.3f, 1.0f, 1.0f, 1.0f};
 
+float kernelVertices[] = {
+    -1.0f, 1.0f, 0.0f, 1.0f,
+    -1.0f, -1.0f, 0.0f, 0.0f,
+    1.0f, -1.0f, 1.0f, 0.0f,
+
+    -1.0f, 1.0f, 0.0f, 1.0f,
+    1.0f, -1.0f, 1.0f, 0.0f,
+    1.0f, 1.0f, 1.0f, 1.0f};
+
 unsigned int cubeVAO, cubeVBO;
 unsigned int planeVAO, planeVBO;
-unsigned int vegetationVAO, vegetationVBO;
 unsigned int screenVAO, screenVBO;
 unsigned int cubeTexture;
 unsigned int floorTexture;
@@ -129,7 +136,7 @@ int main(int argc, char *argv[])
     // Create Context and Load OpenGL Functions
     glfwMakeContextCurrent(mWindow);
     glfwSetFramebufferSizeCallback(mWindow, framebuffer_size_callback);
-    glfwSetCursorPosCallback(mWindow, mouse_callback);
+    // glfwSetCursorPosCallback(mWindow, mouse_callback);
     // glfwSetScrollCallback(mWindow, scroll_callback);
     gladLoadGL();
     fprintf(stderr, "OpenGL %s\n", glGetString(GL_VERSION));
@@ -161,23 +168,11 @@ int main(int argc, char *argv[])
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
     glBindVertexArray(0);
 
-    // leaf VAO
-    glGenVertexArrays(1, &vegetationVAO);
-    glGenBuffers(1, &vegetationVBO);
-    glBindVertexArray(vegetationVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, vegetationVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), &transparentVertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
-    glBindVertexArray(0);
-
     glGenVertexArrays(1, &screenVAO);
     glGenBuffers(1, &screenVBO);
     glBindVertexArray(screenVAO);
     glBindBuffer(GL_ARRAY_BUFFER, screenVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(screenVertices), &screenVertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(kernelVertices), &kernelVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(1);
@@ -198,17 +193,7 @@ int main(int argc, char *argv[])
 
     cubeTexture = loadTexture("E:/Glitter/assets/container.jpg");
     floorTexture = loadTexture("E:/Glitter/assets/metal.png");
-    unsigned int grassTexture = loadTexture("E:/Glitter/assets/grass.png");
-    unsigned int blending_transparent_window = loadTexture("E:/Glitter/assets/blending_transparent_window.png");
 
-    // vector<glm::vec3> vegetation;
-    // vegetation.push_back(glm::vec3(-1.5f, 0.0f, -0.48f));
-    // vegetation.push_back(glm::vec3(1.5f, 0.0f, 0.51f));
-    // vegetation.push_back(glm::vec3(0.0f, 0.0f, 0.7f));
-    // vegetation.push_back(glm::vec3(-0.3f, 0.0f, -2.3f));
-    // vegetation.push_back(glm::vec3(0.5f, 0.0f, -0.6f));
-
-    // std::map<float, glm::vec3> sorted;
     // framebuffer creating
     unsigned int fbo;
     glGenFramebuffers(1, &fbo);
@@ -266,32 +251,22 @@ int main(int argc, char *argv[])
         processInput(mWindow);
 
         // draw the scene normaly
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_DEPTH_TEST);
-
-        // draw the scene
-        // cubes
-        drawScene(cubeShader);
-
-        // rotate camera and draw again
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
-        camera.TowardRight();
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f),
+                                                (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 view = camera.GetViewMatrix();
+        cubeShader.use();
+        cubeShader.setMat4("projection", projection);
+        cubeShader.setMat4("view", view);
         drawScene(cubeShader);
-        camera.TowardLeft();
 
-        // draw the miror
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        // glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        // glClear(GL_COLOR_BUFFER_BIT);
-        glDisable(GL_DEPTH_TEST);
-
         screenShader.use();
         glBindVertexArray(screenVAO);
+        glDisable(GL_DEPTH_TEST);
         glBindTexture(GL_TEXTURE_2D, textureColor);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
@@ -299,9 +274,6 @@ int main(int argc, char *argv[])
         // // Flip Buffers and Draw
         glfwSwapBuffers(mWindow);
         glfwPollEvents();
-
-        // unbind VAO, new VAO next frame
-        glBindVertexArray(0);
     }
 
     glDeleteVertexArrays(1, &cubeVAO);
@@ -319,13 +291,6 @@ int main(int argc, char *argv[])
 
 void drawScene(Shader &cubeShader)
 {
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f),
-                                            (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-    glm::mat4 view = camera.GetViewMatrix();
-
-    cubeShader.use();
-    cubeShader.setMat4("projection", projection);
-    cubeShader.setMat4("view", view);
     glBindVertexArray(cubeVAO);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, cubeTexture);
