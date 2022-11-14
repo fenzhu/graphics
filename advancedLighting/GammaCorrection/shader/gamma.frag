@@ -64,7 +64,7 @@ void main()
     why do they apply this operation? To make pixel looks better in user's eye.
     
     which makes colors darker. and the scene looks weired.
-    ***if we work in linear space, we want to apply pow(FragColor, 1.0/2.2) to correction the monitor's operation, so-called gamma-correction.***
+    ***if we work in linear space, we want to apply pow(FragColor, 1.0/2.2) to correct the monitor's operation, so-called gamma-correction.***
 
     usually the texture is produced in monitor space, which is not linear.To make the texture looks right, the artist already did the gamma-correction by their hands.***So we should revert artist's texture to linear space when we load the texture.***
     */
