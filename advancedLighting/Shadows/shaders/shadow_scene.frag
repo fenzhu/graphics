@@ -23,7 +23,10 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     projCoords = projCoords * 0.5 + 0.5;
 
     float depthInMap = texture(shadowMap, vec2(projCoords)).r;
-    return depthInMap < projCoords.z ? 1.0 : 0.0;
+    
+    float bias = 0.005;
+
+    return depthInMap < projCoords.z - bias ? 1.0 : 0.0;
 }
 
 void main()
