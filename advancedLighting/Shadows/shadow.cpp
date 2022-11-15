@@ -111,6 +111,8 @@ int main(int argc, char *argv[])
     debugShader.setInt("depthMap", 0);
     Shader depthShader = Shader("E:/Glitter/Glitter/Shaders/shadow.vert",
                                 "E:/Glitter/Glitter/Shaders/shadow.frag");
+    Shader sceneShader = Shader("E:/Glitter/Glitter/Shaders/shadow_scene.vert",
+                                "E:/Glitter/Glitter/Shaders/shadow_scene.frag");
 
     glGenVertexArrays(1, &planeVAO);
     glBindVertexArray(planeVAO);
@@ -139,7 +141,7 @@ int main(int argc, char *argv[])
         glm::vec3(0.50),
         glm::vec3(0.75),
         glm::vec3(1.00)};
-
+    glm::vec3 lightPos(-2.0f, 4.0f, -1.0f);
     glEnable(GL_DEPTH_TEST);
     // glEnable(GL_MULTISAMPLE);
     glEnable(GL_BLEND);
@@ -156,7 +158,7 @@ int main(int argc, char *argv[])
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
-        // write the shadow map
+        // write the ShadowMap
         glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
         glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
         glClear(GL_DEPTH_BUFFER_BIT);
@@ -164,15 +166,13 @@ int main(int argc, char *argv[])
         float near_plane = 1.0f, far_plane = 7.5f;
         glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f,
                                                near_plane, far_plane);
-        glm::mat4 lightView = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f),
+        glm::mat4 lightView = glm::lookAt(lightPos,
                                           glm::vec3(0.0f, 0.0f, 0.0f),
                                           glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4 lightSpaceMatrix = lightProjection * lightView;
         // render
         depthShader.use();
         depthShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
-        // glActiveTexture(GL_TEXTURE0);
-        // glBindTexture(GL_TEXTURE_2D, floorTexture);
         renderScene(depthShader);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -180,14 +180,32 @@ int main(int argc, char *argv[])
         glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         // configure
+        sceneShader.use();
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom),
+                                                (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 view = camera.GetViewMatrix();
+
+        sceneShader.setMat4("projection", projection);
+        sceneShader.setMat4("view", view);
+    
+        sceneShader.setVec3("lightPos", lightPos);
+        sceneShader.setVec3("viewPos", camera.Position);
+        sceneShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+    
+        sceneShader.setInt("diffuseTexture", 0);
+        sceneShader.setInt("shadowMap", 1);
         glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, floorTexture);
+        glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, depthMap);
+        renderScene(sceneShader);
+
         debugShader.use();
+        debugShader.setInt("depthMap", 1);
         debugShader.setFloat("near_plane", near_plane);
         debugShader.setFloat("far_plane", far_plane);
-        // render
-        renderQuad();
-        // glDrawArrays(GL_TRIANGLES, 0, 6);
+        // render debug quad
+        // renderQuad();
 
         // // Flip Buffers and Draw
         glfwSwapBuffers(mWindow);
@@ -463,10 +481,26 @@ void renderQuad()
     {
         float quadVertices[] = {
             // positions        // texture Coords
-            -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+            -1.0f,
+            1.0f,
+            0.0f,
+            0.0f,
+            1.0f,
+            -1.0f,
+            -1.0f,
+            0.0f,
+            0.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            -1.0f,
+            0.0f,
+            1.0f,
+            0.0f,
         };
         // setup plane VAO
         glGenVertexArrays(1, &quadVAO);
@@ -475,9 +509,9 @@ void renderQuad()
         glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
     }
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
