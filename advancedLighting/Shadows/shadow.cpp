@@ -23,8 +23,8 @@ void renderScene(const Shader &shader);
 void renderCube();
 void renderQuad();
 
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 800 * 2;
+const unsigned int SCR_HEIGHT = 600 * 2;
 const unsigned int SHADOW_WIDTH = 1024;
 const unsigned int SHADOW_HEIGHT = 1024;
 // camera初始参数
@@ -94,8 +94,11 @@ int main(int argc, char *argv[])
                  SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    //region outside ShadowMap, not in shadow
+    float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
@@ -146,7 +149,7 @@ int main(int argc, char *argv[])
     // glEnable(GL_MULTISAMPLE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
+    glEnable(GL_CULL_FACE);
     // Rendering Loop
     while (glfwWindowShouldClose(mWindow) == false)
     {
@@ -173,6 +176,8 @@ int main(int argc, char *argv[])
         // render
         depthShader.use();
         depthShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+        // TODO : peter panning...
+        glCullFace(GL_FRONT);
         renderScene(depthShader);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -181,17 +186,18 @@ int main(int argc, char *argv[])
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         // configure
         sceneShader.use();
+        glDisable(GL_CULL_FACE);
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom),
                                                 (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
 
         sceneShader.setMat4("projection", projection);
         sceneShader.setMat4("view", view);
-    
+
         sceneShader.setVec3("lightPos", lightPos);
         sceneShader.setVec3("viewPos", camera.Position);
         sceneShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
-    
+
         sceneShader.setInt("diffuseTexture", 0);
         sceneShader.setInt("shadowMap", 1);
         glActiveTexture(GL_TEXTURE0);

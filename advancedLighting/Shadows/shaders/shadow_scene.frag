@@ -22,6 +22,11 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     // transform NDC [-1, 1] to [0, 1]
     projCoords = projCoords * 0.5 + 0.5;
 
+    //behind light's far plane, should not be in shadow
+    if (projCoords.z > 1.0) {
+        return 0.0;
+    }
+
     float depthInMap = texture(shadowMap, vec2(projCoords)).r;
     
     float bias = 0.005;
