@@ -60,7 +60,8 @@ int main(int argc, char *argv[])
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
     glfwWindowHint(GLFW_SAMPLES, 4);
-    auto mWindow = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "OPENGL", nullptr, nullptr);
+    auto mWindow =
+        glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "OPENGL", nullptr, nullptr);
 
     // Check for Valid Context
     if (mWindow == nullptr)
@@ -75,44 +76,49 @@ int main(int argc, char *argv[])
     glfwSetCursorPosCallback(mWindow, mouse_callback);
     // glfwSetScrollCallback(mWindow, scroll_callback);
     gladLoadGL();
-    fprintf(stderr, "OpenGL %s\n", glGetString(GL_VERSION));
     int nrAttributes;
     glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
-    std::cout << "Maximum number of vertex attributes supported : " << nrAttributes << std::endl;
-    std::cout << "Maximum number of texture unit : " << GL_MAX_TEXTURE_UNITS << std::endl;
-
+    bool dev = true;
+    if (dev)
+    {
+        fprintf(stderr, "OpenGL %s\n", glGetString(GL_VERSION));
+        std::cout << "Maximum number of vertex attributes supported : "
+                  << nrAttributes << std::endl;
+        std::cout << "Maximum number of texture unit : " << GL_MAX_TEXTURE_UNITS
+                  << std::endl;
+    }
     // stbi_set_flip_vertically_on_load(true);
     // build and compile shader
     Shader modelShader = Shader("E:/Glitter/Glitter/Shaders/normal.vert",
                                 "E:/Glitter/Glitter/Shaders/normal.frag");
-    modelShader.setInt("floorTexture", 0);
-    modelShader.setInt("normalTexture", 1);
-
+    // modelShader.setInt("floorTexture", 0);
+    //   modelShader.setInt("normalMap", 1);
 
     unsigned int brickTexture = loadTexture("E:/Glitter/assets/brickwall.jpg");
-    unsigned int normalTexture = loadTexture("E:/Glitter/assets/brickwall_normal.jpg");
-    std::cout << brickTexture << " " << normalTexture << endl;
+    unsigned int normalTexture =
+        loadTexture("E:/Glitter/assets/brickwall_normal.jpg");
     glm::vec3 lightPos(0.5f, 1.0f, 0.3f);
 
     // glGenVertexArrays(1, &planeVAO);
     // glBindVertexArray(planeVAO);
     // glGenBuffers(1, &planeVBO);
     // glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
-    // glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
-    // glEnableVertexAttribArray(0);
-    // // parameter: index, size of index, type, normalize, stride, offset in stride
-    // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
-    // glEnableVertexAttribArray(1);
-    // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(3 * sizeof(float)));
+    // glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices,
+    // GL_STATIC_DRAW); glEnableVertexAttribArray(0);
+    // // parameter: index, size of index, type, normalize, stride, offset in
+    // stride glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+    // (void *)0); glEnableVertexAttribArray(1); glVertexAttribPointer(1, 3,
+    // GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(3 * sizeof(float)));
     // glEnableVertexAttribArray(2);
-    // glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
-    // glBindVertexArray(0);
+    // glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void
+    // *)(6 * sizeof(float))); glBindVertexArray(0);
 
     // glEnable(GL_DEPTH_TEST);
     // glEnable(GL_MULTISAMPLE);
 
     // std::cout << glm::vec3(1.0) * 2.0 - 1.0 << endl;
     // Rendering Loop
+    bool show = 1;
     while (glfwWindowShouldClose(mWindow) == false)
     {
         float currentFrame = static_cast<float>(glfwGetTime());
@@ -127,25 +133,30 @@ int main(int argc, char *argv[])
 
         glBindVertexArray(planeVAO);
         glm::mat4 view = camera.GetViewMatrix();
-        glm::mat4 projection = glm::perspective(glm::radians(45.0f),
-                                                (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 projection =
+            glm::perspective(glm::radians(45.0f),
+                             (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
         modelShader.use();
 
-        // glActiveTexture(GL_TEXTURE0);
-        // glBindTexture(GL_TEXTURE_2D, normalTexture);brickTexture
+        //     glActiveTexture(GL_TEXTURE0);
+        //     glBindTexture(GL_TEXTURE_2D, brickTexture);
+        // brickTexture normalTexture
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, brickTexture);
+        glBindTexture(GL_TEXTURE_2D, normalTexture);
 
+        modelShader.setInt("floorTexture", 0);
+        modelShader.setInt("normalMap", 1);
         modelShader.setMat4("projection", projection);
         modelShader.setMat4("view", view);
         glm::mat4 model = glm::mat4(1.0f);
-        model = glm::rotate(model, glm::radians((float)glfwGetTime() * -10.0f), glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f)));
-        // model =  glm::scale(model,glm::vec3(1.0f) *  glm::sin((float)glfwGetTime()));
+        model = glm::rotate(model, glm::radians((float)glfwGetTime() * -10.0f),
+                            glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f)));
+        // model =  glm::scale(model,glm::vec3(1.0f) *
+        // glm::sin((float)glfwGetTime()));
         modelShader.setMat4("model", model);
         modelShader.setVec3("viewPos", camera.Position);
         modelShader.setVec3("lightPos", lightPos);
-
 
         // glDrawArrays(GL_TRIANGLES, 0, 6);
         renderQuad();
@@ -195,8 +206,8 @@ void processInput(GLFWwindow *window)
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
-    // make sure the viewport matches the new window dimensions; note that width and
-    // height will be significantly larger than specified on retina displays.
+    // make sure the viewport matches the new window dimensions; note that width
+    // and height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
 }
 
@@ -215,7 +226,8 @@ void mouse_callback(GLFWwindow *window, double xposIn, double yposIn)
     }
 
     float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+    float yoffset =
+        lastY - ypos; // reversed since y-coordinates go from bottom to top
 
     lastX = xpos;
     lastY = ypos;
@@ -249,9 +261,10 @@ unsigned int loadTexture(char const *path)
             format = GL_RGBA;
         else
             format = GL_RGB;
-
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format,
+                     GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
         if (format != GL_RGBA)
         {
@@ -263,7 +276,8 @@ unsigned int loadTexture(char const *path)
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         }
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                        GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         stbi_image_free(data);
@@ -290,12 +304,14 @@ unsigned int loadCubemap(vector<std::string> faces)
 
         if (data)
         {
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height,
+                         0, GL_RGB, GL_UNSIGNED_BYTE, data);
             stbi_image_free(data);
         }
         else
         {
-            std::cout << "Cubemap tex failed to load at path: " << faces[i] << std::endl;
+            std::cout << "Cubemap tex failed to load at path: " << faces[i]
+                      << std::endl;
             stbi_image_free(data);
         }
     }
@@ -313,14 +329,14 @@ void renderQuad()
     if (quadVAO == 0)
     {
         // positions
-        glm::vec3 pos1(-1.0f,  1.0f, 0.0f);
+        glm::vec3 pos1(-1.0f, 1.0f, 0.0f);
         glm::vec3 pos2(-1.0f, -1.0f, 0.0f);
-        glm::vec3 pos3( 1.0f, -1.0f, 0.0f);
-        glm::vec3 pos4( 1.0f,  1.0f, 0.0f);
+        glm::vec3 pos3(1.0f, -1.0f, 0.0f);
+        glm::vec3 pos4(1.0f, 1.0f, 0.0f);
         // texture coordinates
         glm::vec2 uv1(0.0f, 1.0f);
         glm::vec2 uv2(0.0f, 0.0f);
-        glm::vec2 uv3(1.0f, 0.0f);  
+        glm::vec2 uv3(1.0f, 0.0f);
         glm::vec2 uv4(1.0f, 1.0f);
         // normal vector
         glm::vec3 nm(0.0f, 0.0f, 1.0f);
@@ -358,38 +374,54 @@ void renderQuad()
         tangent2.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
         tangent2.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
 
-
         bitangent2.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
         bitangent2.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
         bitangent2.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
 
-
         float quadVertices[] = {
-            // positions            // normal         // texcoords  // tangent                          // bitangent
-            pos1.x, pos1.y, pos1.z, nm.x, nm.y, nm.z, uv1.x, uv1.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
-            pos2.x, pos2.y, pos2.z, nm.x, nm.y, nm.z, uv2.x, uv2.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
-            pos3.x, pos3.y, pos3.z, nm.x, nm.y, nm.z, uv3.x, uv3.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
+            // positions            // normal         // texcoords  // tangent //
+            // bitangent
+            pos1.x, pos1.y, pos1.z, nm.x, nm.y,
+            nm.z, uv1.x, uv1.y, tangent1.x, tangent1.y,
+            tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z, pos2.x,
+            pos2.y, pos2.z, nm.x, nm.y, nm.z,
+            uv2.x, uv2.y, tangent1.x, tangent1.y, tangent1.z,
+            bitangent1.x, bitangent1.y, bitangent1.z, pos3.x, pos3.y,
+            pos3.z, nm.x, nm.y, nm.z, uv3.x,
+            uv3.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x,
+            bitangent1.y, bitangent1.z,
 
-            pos1.x, pos1.y, pos1.z, nm.x, nm.y, nm.z, uv1.x, uv1.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z,
-            pos3.x, pos3.y, pos3.z, nm.x, nm.y, nm.z, uv3.x, uv3.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z,
-            pos4.x, pos4.y, pos4.z, nm.x, nm.y, nm.z, uv4.x, uv4.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z
-        };
+            pos1.x, pos1.y, pos1.z, nm.x, nm.y,
+            nm.z, uv1.x, uv1.y, tangent2.x, tangent2.y,
+            tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z, pos3.x,
+            pos3.y, pos3.z, nm.x, nm.y, nm.z,
+            uv3.x, uv3.y, tangent2.x, tangent2.y, tangent2.z,
+            bitangent2.x, bitangent2.y, bitangent2.z, pos4.x, pos4.y,
+            pos4.z, nm.x, nm.y, nm.z, uv4.x,
+            uv4.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x,
+            bitangent2.y, bitangent2.z};
         // configure plane VAO
         glGenVertexArrays(1, &quadVAO);
         glGenBuffers(1, &quadVBO);
         glBindVertexArray(quadVAO);
         glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices,
+                     GL_STATIC_DRAW);
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float),
+                              (void *)0);
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(3 * sizeof(float)));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float),
+                              (void *)(3 * sizeof(float)));
         glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(6 * sizeof(float)));
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(float),
+                              (void *)(6 * sizeof(float)));
         glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(8 * sizeof(float)));
+        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float),
+                              (void *)(8 * sizeof(float)));
         glEnableVertexAttribArray(4);
-        glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(11 * sizeof(float)));
+        glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float),
+                              (void *)(11 * sizeof(float)));
     }
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
