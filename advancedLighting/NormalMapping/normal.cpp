@@ -91,8 +91,6 @@ int main(int argc, char *argv[])
     // build and compile shader
     Shader modelShader = Shader("E:/Glitter/Glitter/Shaders/normal.vert",
                                 "E:/Glitter/Glitter/Shaders/normal.frag");
-    // modelShader.setInt("floorTexture", 0);
-    //   modelShader.setInt("normalMap", 1);
 
     unsigned int brickTexture = loadTexture("E:/Glitter/assets/brickwall.jpg");
     unsigned int normalTexture =
@@ -139,14 +137,15 @@ int main(int argc, char *argv[])
 
         modelShader.use();
 
-        //     glActiveTexture(GL_TEXTURE0);
-        //     glBindTexture(GL_TEXTURE_2D, brickTexture);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, brickTexture);
         // brickTexture normalTexture
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, normalTexture);
 
         modelShader.setInt("floorTexture", 0);
         modelShader.setInt("normalMap", 1);
+
         modelShader.setMat4("projection", projection);
         modelShader.setMat4("view", view);
         glm::mat4 model = glm::mat4(1.0f);

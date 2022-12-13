@@ -12,6 +12,11 @@ out VS_OUT {
     vec3 TangentLightPos;
     vec3 TangentViewPos;
     vec3 TangentFragPos;
+
+    vec3 normal;
+
+    vec3 aTangent;
+    vec3 aBitangent;
 } vs_out;
 
 uniform mat4 projection;
@@ -21,21 +26,33 @@ uniform mat4 model;
 uniform vec3 lightPos;
 uniform vec3 viewPos;
 
+uniform sampler2D normalMap;
+
 void main()
 {
     vs_out.FragPos = vec3(model * vec4(aPos, 1.0));
     vs_out.TexCoords = aTexCoords;
 
+    vec3 normal = texture(normalMap, aTexCoords).rgb;
+    normal = normalize(normal * 2.0 - 1.0);
+    vs_out.normal = normal;
+
+    //OpenGL matrix: column-major format
     mat3 normalMatrix = transpose(inverse(mat3(model)));
     vec3 T = normalize(normalMatrix * aTangent);
     vec3 N = normalize(normalMatrix * aNormal);
     T = normalize(T - dot(T, N) * N);
     vec3 B = cross(N, T);
 
+    //orthogonal matrix(each axis perpendicular)
+    //property: the transpose of orthogonal matrix is its inverse.
     mat3 TBN = transpose(mat3(T, B, N));
     vs_out.TangentLightPos = TBN * lightPos;
     vs_out.TangentViewPos = TBN * viewPos;
     vs_out.TangentFragPos = TBN * vs_out.FragPos;
+
+    vs_out.aTangent = aTangent;
+    vs_out.aBitangent = aBitangent;
 
     gl_Position = projection * view * model * vec4(aPos, 1.0);
 }
