@@ -25,10 +25,14 @@ const unsigned int SCR_WIDTH = 1920;
 const unsigned int SCR_HEIGHT = 1080;
 
 // camera初始参数
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 5.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
+
+bool hdr = true;
+bool hdrKeyPressed = false;
+float exposure = 1.0f;
 
 bool blinn = true;
 bool blinnKeyPressed = false;
@@ -36,20 +40,6 @@ bool blinnKeyPressed = false;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-float planeVertices[] = {
-    // positions            // normals         // texcoords
-    10.0f, -0.5f, 10.0f, 0.0f, 1.0f, 0.0f, 10.0f, 0.0f,
-    -10.0f, -0.5f, 10.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-    -10.0f, -0.5f, -10.0f, 0.0f, 1.0f, 0.0f, 0.0f, 10.0f,
-
-    10.0f, -0.5f, 10.0f, 0.0f, 1.0f, 0.0f, 10.0f, 0.0f,
-    -10.0f, -0.5f, -10.0f, 0.0f, 1.0f, 0.0f, 0.0f, 10.0f,
-    10.0f, -0.5f, -10.0f, 0.0f, 1.0f, 0.0f, 10.0f, 10.0f};
-
-unsigned int planeVAO;
-unsigned int planeVBO;
-unsigned int quadVAO = 0;
-unsigned int quadVBO;
 int main(int argc, char *argv[])
 {
     glfwInit();
@@ -99,7 +89,7 @@ int main(int argc, char *argv[])
     glm::vec3 lightPos(0.5f, 1.0f, 0.3f);
 
     unsigned int hdrFBO;
-    glGenFrameBuffers(1, &hdrFBO);
+    glGenFramebuffers(1, &hdrFBO);
 
     unsigned int colorBuffer;
     glGenTextures(1, &colorBuffer);
@@ -107,14 +97,14 @@ int main(int argc, char *argv[])
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0,
                  GL_RGBA, GL_FLOAT, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     unsigned int rboDepth;
-    glGenRenderBuffers(1, &rboDepth);
-    glBindRenderBuffer(GL_RENDERBUFFER, rboDepth);
+    glGenRenderbuffers(1, &rboDepth);
+    glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, SCR_WIDTH, SCR_HEIGHT);
 
-    glBindFrameBuffer(GL_FRAMEBUFFER, hdrFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBuffer, 0);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
 
@@ -162,10 +152,10 @@ int main(int argc, char *argv[])
         glBindTexture(GL_TEXTURE_2D, woodTexture);
         for (unsigned int i = 0; i < lightPositions.size(); i++)
         {
-            shader.serVec3("lights[" + std::to_string(i) + "].Position", lightPositions[i]);
-            shader.serVec3("lights[" + std::to_string(i) + "].Color", lightColors[i]);
+            shader.setVec3("lights[" + std::to_string(i) + "].Position", lightPositions[i]);
+            shader.setVec3("lights[" + std::to_string(i) + "].Color", lightColors[i]);
         }
-        shader.serVec3("viewPos", camera.Position);
+        shader.setVec3("viewPos", camera.Position);
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(0.0f, 0.0f, 25.0));
         model = glm::scale(model, glm::vec3(2.5f, 2.5f, 27.5f));
@@ -188,10 +178,6 @@ int main(int argc, char *argv[])
         glfwSwapBuffers(mWindow);
         glfwPollEvents();
     }
-
-    glDeleteVertexArrays(1, &planeVAO);
-
-    glDeleteBuffers(1, &planeVBO);
 
     glfwTerminate();
     return EXIT_SUCCESS;
@@ -220,16 +206,26 @@ void processInput(GLFWwindow *window)
         blinnKeyPressed = false;
     }
 
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !hdrKeyPressed)
+    {
+        hdr = !hdr;
+        hdrKeyPressed = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE)
+    {
+        hdrKeyPressed = false;
+    }
+
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
     {
         if (exposure > 0.0f)
-            exposure -= 0.001f;
+            exposure -= 0.1f;
         else
             exposure = 0.0f;
     }
     else if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
     {
-        exposure += 0.001f;
+        exposure += 0.1f;
     }
 }
 
